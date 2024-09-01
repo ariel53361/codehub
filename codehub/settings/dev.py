@@ -3,7 +3,7 @@ from .common import *
 
 DEBUG = True
 
-SECRET_KEY = "2%!)6(ib=@0b7j1xi)!rmzl6n_1ven#wb$=0a3vs#m)n$&*=5#"
+SECRET_KEY = "django-insecure-c0%n3r)(1coucuk!k4h4w2q*)&syz8n854fa=b*+2ezpjpf8j0"
 
 DATABASES = {
     'default': {
