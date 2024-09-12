@@ -11,7 +11,7 @@ DATABASES = {
         'NAME': 'codehub',
         'HOST': 'localhost',
         'USER': 'admin',
-        'PASSWORD': 'a0526910700',
+        'PASSWORD': os.environ.get("RDS_DB_PASSWORD"),
         'PORT': '3306',
     }
 }
