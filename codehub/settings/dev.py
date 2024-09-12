@@ -9,7 +9,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'codehub',
-        'HOST': 'localhost',
+        'HOST': 'codehub.cve0iuquepre.eu-north-1.rds.amazonaws.com',
         'USER': 'admin',
         'PASSWORD': os.environ.get("RDS_DB_PASSWORD"),
         'PORT': '3306',
