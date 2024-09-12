@@ -10,7 +10,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'codehub',
         'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD': '1234'
+        'USER': 'admin',
+        'PASSWORD': 'a0526910700',
+        'PORT': '3306',
     }
 }
