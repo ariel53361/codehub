@@ -69,6 +69,10 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
+ALLOWED_HOSTS = [
+    "13.60.13.176",
+]
+
 ROOT_URLCONF = 'codehub.urls'
 
 TEMPLATES = [
