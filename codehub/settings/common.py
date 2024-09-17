@@ -43,8 +43,8 @@ INSTALLED_APPS = [
 ]
 
 # STATIC_URL = "/static/"
-STATIC_ROOT = "codehub/static"
-STATIC_URL = 'django_static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATIC_URL = '/django_static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = 'media'
