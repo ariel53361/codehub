@@ -6,8 +6,6 @@ DEBUG = False
 
 SECRET_KEY = os.environ['SECRET_KEY']
 
-ALLOWED_HOSTS = ['codehub-5jsg.onrender.com']
-
 DATABASE_URL = os.getenv('DATABASE_URL')
 url = urlparse(DATABASE_URL)
 

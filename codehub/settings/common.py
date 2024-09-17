@@ -42,10 +42,14 @@ INSTALLED_APPS = [
     'core',
 ]
 
-STATIC_URL = "/static/"
+# STATIC_URL = "/static/"
+STATIC_ROOT = "codehub/static"
+STATIC_URL = 'django_static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = 'media'
+
+CSRF_TRUSTED_ORIGINS = ['http://3.125.17.218']
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
