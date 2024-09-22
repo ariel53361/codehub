@@ -74,7 +74,7 @@ INTERNAL_IPS = [
 ]
 
 ALLOWED_HOSTS = [
-    "13.60.13.176",
+    "51.20.41.3",
 ]
 
 ROOT_URLCONF = 'codehub.urls'
