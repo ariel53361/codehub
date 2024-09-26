@@ -74,7 +74,7 @@ INTERNAL_IPS = [
 ]
 
 ALLOWED_HOSTS = [
-    "51.20.41.3",
+    "51.20.41.3", '127.0.0.1'
 ]
 
 ROOT_URLCONF = 'codehub.urls'
@@ -139,7 +139,8 @@ DJOSER = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=30)
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
 }
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

@@ -45,8 +45,18 @@ class RoomViewSet(ModelViewSet):
     http_method_names = ['get', 'post', 'delete', 'head', 'options']
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = RoomFilter
-    ordering_fields = ['created','participants_num']
+    ordering_fields = ['created','participants_num','last_activity']
     
+    def get_queryset(self):
+        room_pk = self.kwargs.get('pk')
+        base_queryset = Room.objects\
+            .select_related('host', 'topic')\
+            .prefetch_related('participants','messages')\
+            .annotate(participants_num=Count('participants')).annotate(last_activity=Max('messages__created')).order_by('-last_activity')
+        if room_pk:
+            return base_queryset.filter(pk=room_pk)
+        
+        return base_queryset
 
     def get_serializer_class(self, *args, **kwargs):
         if self.request.method == 'POST':
@@ -67,16 +77,7 @@ class RoomViewSet(ModelViewSet):
                     'topic_id': self.kwargs['topic_id']}
         return {'user_id': self.request.user.id}
 
-    def get_queryset(self):
-        room_pk = self.kwargs.get('pk')
-        base_queryset = Room.objects\
-            .select_related('host', 'topic')\
-            .prefetch_related('participants')\
-            .annotate(participants_num=Count('participants')).order_by('-created')
-        if room_pk:
-            return base_queryset.filter(pk=room_pk)
         
-        return base_queryset
 
         # return base_queryset.prefetch_related('messages').annotate(latest_message_created=Max('messages__created')).order_by('-messages__created')
 
