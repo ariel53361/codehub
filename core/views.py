@@ -1,31 +1,30 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework import mixins
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from core.filters import RoomFilter
-from core.permissions import IsMessageWriter
+from core.permissions import IsMessageWriter, IsCurrentUser
 from django.db.models.aggregates import Count, Max
 from .models import User, Topic, Message, Room
-from .serializers import  CreateRoomSerializer, UserSerializer, TopicSerializer, MessageSerializer, RoomSerializer
+from .serializers import CreateRoomSerializer, UserSerializer, TopicSerializer, MessageSerializer, RoomSerializer
 
 
-class UserViewSet(GenericViewSet,mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
+class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    http_method_names = ['get', 'patch','delete', 'head', 'options']
+    http_method_names = ['get', 'patch', 'head', 'options']
 
     def get_permissions(self):
-        if self.request.method in ['PATCH', 'DELETE']:
-            # allow delete only to admins maybe...
-            pass
+        if self.request.method in ['PATCH']:
+            return [IsCurrentUser()]
         return [AllowAny()]
-    
-class TopicViewSet(ModelViewSet):
+
+
+class TopicViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
     serializer_class = TopicSerializer
-    http_method_names = ['get', 'post', 'delete', 'head', 'options']
-    
+    http_method_names = ['get', 'head', 'options']
+
     def get_queryset(self):
         topic_pk = self.kwargs.get('pk')
         self.get_object
@@ -33,29 +32,28 @@ class TopicViewSet(ModelViewSet):
         if topic_pk:
             return base_queryset.filter(pk=topic_pk)
         return base_queryset
-    
-    def get_permissions(self):
-        if self.request.method in ['POST', 'DELETE']:
-            return [IsAdminUser()]
-        return [AllowAny()]
+
+    # def get_permissions(self):
+    #     if self.request.method in ['POST', 'DELETE']:
+    #         return [IsAdminUser()]
+    #     return [AllowAny()]
 
 
-
-class RoomViewSet(ModelViewSet):
-    http_method_names = ['get', 'post', 'delete', 'head', 'options']
+class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin):
+    http_method_names = ['get', 'post', 'destroy', 'head', 'options']
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = RoomFilter
-    ordering_fields = ['created','participants_num','last_activity']
-    
+    ordering_fields = ['created', 'participants_num', 'last_activity']
+
     def get_queryset(self):
         room_pk = self.kwargs.get('pk')
         base_queryset = Room.objects\
             .select_related('host', 'topic')\
-            .prefetch_related('participants','messages')\
-            .annotate(participants_num=Count('participants')).annotate(last_activity=Max('messages__created')).order_by('-last_activity')
+            .prefetch_related('participants', 'messages')\
+            .annotate(participants_num=Count('participants', distinct=True)).annotate(last_activity=Max('messages__created')).order_by('-last_activity')
         if room_pk:
             return base_queryset.filter(pk=room_pk)
-        
+
         return base_queryset
 
     def get_serializer_class(self, *args, **kwargs):
@@ -77,18 +75,10 @@ class RoomViewSet(ModelViewSet):
                     'topic_id': self.kwargs['topic_id']}
         return {'user_id': self.request.user.id}
 
-        
 
-        # return base_queryset.prefetch_related('messages').annotate(latest_message_created=Max('messages__created')).order_by('-messages__created')
-
-
-class MessageViewSet(ModelViewSet):
+class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.UpdateModelMixin,  mixins.CreateModelMixin, mixins.DestroyModelMixin):
     http_method_names = ['get', 'post', 'put', 'delete', 'head', 'options']
     pagination_class = None
-    # def get_serializer_class(self, *args, **kwargs):
-    #     if self.request.method in ['POST', 'PATCH']:
-    #         return CreateOrUpdateMessageSerializer
-    #     return MessageSerializer
     serializer_class = MessageSerializer
 
     def get_serializer_context(self):

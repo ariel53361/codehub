@@ -10,3 +10,9 @@ class IsMessageWriter(permissions.BasePermission):
         return not isinstance(request.user, AnonymousUser) and \
             Message.objects.filter(
                 pk=view.kwargs['pk'], user=request.user).exists()
+
+class IsCurrentUser(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.id == request.user.id

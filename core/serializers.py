@@ -4,28 +4,43 @@ from .models import User, Topic, Room, Message
 
 
 class UserSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    avatar = serializers.ImageField(required=False)
+    is_active = serializers.BooleanField(read_only=True)
+    date_joined = serializers.DateTimeField(read_only=True)
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username','first_name','last_name','avatar','is_active', 'email', 'date_joined']
+        fields = ['id', 'password', 'username', 'first_name',
+                  'last_name', 'avatar', 'is_active', 'email', 'date_joined']
 
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        if password:
+            instance.set_password(password)
 
-    # def validate(self, data):
-    #     if User.objects.filter(username=data['username']).exists():
-    #         raise serializers.ValidationError({"username": "A user with that username already exists."})
-    #     if User.objects.filter(email=data['email']).exists():
-    #         raise serializers.ValidationError({"email": "A user with that email already exists."})
-    #     return data
+        avatar = validated_data.pop('avatar', None)
+        instance.avatar = avatar
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+        return instance
+
 
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta:
         model = User
-        fields = ['username','password','email','first_name','last_name','avatar']
+        fields = ['username', 'password', 'email',
+                  'first_name', 'last_name', 'avatar']
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id','username', 'avatar']
+        fields = ['id', 'username', 'avatar']
 
 
 class TopicSerializer(serializers.ModelSerializer):
@@ -44,7 +59,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ['id', 'topic', 'subject', 'description', 'host', 'participants','participants_num',
+        fields = ['id', 'topic', 'subject', 'description', 'host', 'participants', 'participants_num',
                   'updated', 'created']
 
 
@@ -60,16 +75,17 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ['topic','subject', 'description']
+        fields = ['topic', 'subject', 'description']
 
     def create(self, validated_data):
         print('create')
         user_id = self.context['user_id']
-        topic = Topic.objects.get(name=validated_data.get('topic')['name']) 
+        topic = Topic.objects.get(name=validated_data.get('topic')['name'])
 
         if not topic:
-            raise serializers.ValidationError({'topic': 'This topic does not existes'})
-        
+            raise serializers.ValidationError(
+                {'topic': 'This topic does not existes'})
+
         user = User.objects.get(pk=user_id)
         return Room.objects.create(
             host=user, topic=topic, subject=validated_data['subject'], description=validated_data['description'])
@@ -92,30 +108,26 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'user', 'content', 'room', 'updated', 'created']
+
     def save(self, **kwargs):
         user_id = self.context['user_id']
         room = Room.objects.get(pk=self.context['room_id'])
 
-            
         try:
             user = User.objects.get(pk=user_id)
             self.instance = Message.objects.create(
                 user=user, room=room, **self.validated_data)
             if room.host != user:
                 room.participants.add(user)
-        
+
         except:
             # heandle update message
             pass
             # message = Message(user_pk=user_id)
             # message.content = self.validated_data['content']
             # self.instance = message
-        
-  
-            
 
         return self.instance
-
 
 
 # class CreateOrUpdateMessageSerializer(serializers.ModelSerializer):
