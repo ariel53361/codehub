@@ -1,9 +1,11 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 
 
 class User(AbstractUser):
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, error_messages={
+                              'unique': 'A user with this email already exists.'})
     avatar = models.ImageField(
         upload_to='avatars', default='avatars/default_avatar.svg', null=True, blank=True)
 
@@ -22,8 +24,8 @@ class Room(models.Model):
     host = models.ForeignKey(User, on_delete=models.CASCADE)
     topic = models.ForeignKey(
         Topic, on_delete=models.SET_NULL, null=True, related_name='rooms')
-    subject = models.CharField(max_length=200)
-    description = models.TextField(null=True, blank=True)
+    subject = models.CharField(max_length=200, validators=[MinLengthValidator(2)])
+    description = models.TextField(null=True, blank=True, max_length=200)
     participants = models.ManyToManyField(
         User, related_name='participants', blank=True)
     updated = models.DateTimeField(auto_now=True)
@@ -37,7 +39,10 @@ class Message(models.Model):
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     room = models.ForeignKey(
         Room, on_delete=models.CASCADE, related_name='messages')
-    content = models.TextField()
+    content = models.TextField(validators=[
+        MinLengthValidator(2, "Message must be at least 2 characters"),
+        MaxLengthValidator(50000, "Message cannot exceed 50,000 characters")
+    ])
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 

@@ -7,18 +7,23 @@ from core.filters import RoomFilter
 from core.permissions import IsMessageWriter, IsCurrentUser
 from django.db.models.aggregates import Count, Max
 from .models import User, Topic, Message, Room
-from .serializers import CreateRoomSerializer, UserSerializer, TopicSerializer, MessageSerializer, RoomSerializer
+from .serializers import CreateRoomSerializer, UserReadAndUpdateSerializer, TopicSerializer, MessageSerializer, RoomSerializer
 
 
 class UserViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     http_method_names = ['get', 'patch', 'head', 'options']
+    serializer_class = UserReadAndUpdateSerializer
 
     def get_permissions(self):
         if self.request.method in ['PATCH']:
             return [IsCurrentUser()]
         return [AllowAny()]
+
+    # def get_serializer_class(self, *args, **kwargs):
+    #     if self.request.method == 'PATCH':
+    #         return UserUpdateSerializer
+    #     return UserReadAndUpdateSerializer
 
 
 class TopicViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
@@ -78,7 +83,6 @@ class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMix
 
 class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.UpdateModelMixin,  mixins.CreateModelMixin, mixins.DestroyModelMixin):
     http_method_names = ['get', 'post', 'put', 'delete', 'head', 'options']
-    pagination_class = None
     serializer_class = MessageSerializer
 
     def get_serializer_context(self):
@@ -90,7 +94,7 @@ class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModel
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        # for some reason the IsMessageWriter permission is not workin with the PATCH method
+        # for some reason the IsMessageWriter permission is not working with the PATCH method
         elif self.request.method == 'PUT':
             return [IsMessageWriter()]
         elif self.request.method == 'POST':
@@ -102,3 +106,38 @@ class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModel
         if room_pk:
             return Message.objects.filter(room_id=room_pk).select_related('user').order_by('created')
         return Message.objects.all().select_related('user', 'room').order_by('-created')
+
+
+# # This class extends Djoser's TokenCreateView to customize how tokens are created and returned
+# class CustomTokenCreateView(TokenCreateView):
+#     # This method is called after user credentials are validated
+#     # It receives the serializer containing the authenticated user
+#     def _action(self, serializer):
+#         # Create both refresh and access tokens for the authenticated user
+#         # token is the refresh token object, which also contains the access token
+#         token = RefreshToken.for_user(serializer.user)
+
+#         # Create the response object
+#         # Only include access token in JSON body - frontend will store this
+#         # The refresh token will be sent as a cookie instead
+#         response = Response(
+#             {
+#                 'access': str(token.access_token),
+#             },
+#             status=status.HTTP_200_OK,
+#         )
+
+#         # Set the refresh token as a cookie
+#         response.set_cookie(
+#             key='refresh_token',      # Name of the cookie
+#             value=str(token),         # The refresh token value
+#             expires=None,             # Cookie expires when browser closes
+#             secure=False,              # Cookie only sent over HTTPS
+#             httponly=True,            # Cookie cannot be accessed by JavaScript
+#             samesite='Lax'           # Protects against CSRF attacks
+#         )
+
+#         # Return the response with both:
+#         # - access token in response body (for frontend to store)
+#         # - refresh token in cookie (automatically handled by browser)
+#         return response

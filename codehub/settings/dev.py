@@ -12,9 +12,12 @@ DATABASES = {
         'PASSWORD': '1234',
         'HOST': 'localhost',
         'USER': 'root',
-        # 'PORT': '3306',
-        # 'HOST': 'codehub.cve0iuquepre.eu-north-1.rds.amazonaws.com',
-        # 'USER': 'admin',
-        # 'PASSWORD': os.environ.get("RDS_DB_PASSWORD"),
     }
 }
+
+SIMPLE_JWT = {
+    **SIMPLE_JWT,  
+    'AUTH_COOKIE_SECURE': False,
+}
+
+MIDDLEWARE.insert(2, 'debug_toolbar.middleware.DebugToolbarMiddleware')

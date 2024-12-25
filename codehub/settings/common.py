@@ -22,9 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 
-
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,23 +39,19 @@ INSTALLED_APPS = [
     'core',
 ]
 
-# STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, 'codehub/static')
 STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = 'media'
 
-CSRF_TRUSTED_ORIGINS = ['http://3.125.17.218']
 # MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -66,15 +59,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
+CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
 ALLOWED_HOSTS = [
-    "51.20.41.3", '127.0.0.1'
+    'localhost', '127.0.0.1'
 ]
 
 ROOT_URLCONF = 'codehub.urls'
@@ -96,7 +92,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'codehub.wsgi.application'
-
 
 
 # Password validation
@@ -132,15 +127,22 @@ REST_FRAMEWORK = {
 
 DJOSER = {
     'SERIALIZERS': {
-        'current_user': 'core.serializers.UserSerializer',
+        'current_user': 'core.serializers.UserReadAndUpdateSerializer',
         'user_create': 'core.serializers.UserCreateSerializer'
     },
 }
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'AUTH_COOKIE': 'refresh_token',
+    'AUTH_COOKIE_HTTP_ONLY': True,
+    'AUTH_COOKIE_PATH': '/',
+    'AUTH_COOKIE_SAMESITE': 'Lax',
+    'AUTH_COOKIE_DOMAIN': 'localhost',
+    'AUTH_COOKIE_MAX_AGE': timedelta(days=7),
 }
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/

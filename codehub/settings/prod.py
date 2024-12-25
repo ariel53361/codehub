@@ -19,3 +19,8 @@ DATABASES = {
         'PORT': url.port,
     }
 }
+
+SIMPLE_JWT = {
+    **SIMPLE_JWT,
+    'AUTH_COOKIE_SECURE': True,
+}
