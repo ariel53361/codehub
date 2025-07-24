@@ -1,16 +1,22 @@
-"""
-ASGI config for codehub project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
-"""
-
 import os
+import django
 
-from django.core.asgi import get_asgi_application
-
+# Set the settings module and initialize Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'codehub.settings.dev')
+django.setup()  # This ensures settings and apps are fully loaded
 
-application = get_asgi_application()
+# Now safe to import Django-related modules
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+import core.routing
+
+print("Loading ASGI application")
+application = ProtocolTypeRouter({
+    'http': get_asgi_application(),
+    'websocket': AuthMiddlewareStack(
+        URLRouter(
+            core.routing.websocket_urlpatterns
+        )
+    ),
+})

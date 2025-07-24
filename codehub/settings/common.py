@@ -25,6 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -37,6 +38,7 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'djoser',
     'core',
+    'channels',
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'codehub/static')
@@ -92,6 +94,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'codehub.wsgi.application'
+ASGI_APPLICATION = 'codehub.asgi.application'
 
 
 # Password validation
@@ -134,7 +137,7 @@ DJOSER = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'AUTH_COOKIE': 'refresh_token',

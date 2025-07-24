@@ -1,4 +1,3 @@
-import os
 from .common import *
 
 DEBUG = True
@@ -18,6 +17,12 @@ DATABASES = {
 SIMPLE_JWT = {
     **SIMPLE_JWT,  
     'AUTH_COOKIE_SECURE': False,
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
 }
 
 MIDDLEWARE.insert(2, 'debug_toolbar.middleware.DebugToolbarMiddleware')
