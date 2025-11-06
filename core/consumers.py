@@ -7,11 +7,16 @@ from django.db import close_old_connections
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
 from .models import User, Message, Room
+from .serializers import MessageSerializer
 
 
 GENERAL_WS_ERROR = 4000
 TOKEN_EXPIRED = 4001
 TOKEN_MISSING = 4002
+INVALID_MESSAGE_FORMAT = 4003
+
+ERROR_TYPE = "ws_error"
+CHAT_MESSAGE_TYPE = "chat_message"
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -24,14 +29,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         try:
-            validated_token = await self.validate_token(token)
-            print("validating token complited")
-            user = await self.get_user_from_token(validated_token)
-            print("getting user complited")
+            user = await self.authenticate_user(token)
             self.scope['access_token'] = token
             self.scope['user'] = user
         except InvalidToken as e:
-
             print("InvalidToken")
             await self.close()
             return
@@ -56,25 +57,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
             token = self.scope.get('access_token')
 
             if not token:
-                await self.send(text_data=json.dumps({
-                    "type": "ws_error",
-                    "code": TOKEN_MISSING,
-                    "message": "Token is missing"
-                }))
+                await self.send_to_client(ERROR_TYPE, TOKEN_MISSING, "Token is missing")
                 await self.close(code=TOKEN_EXPIRED)
 
-            validated_token = await self.validate_token(token)
-            user = await self.get_user_from_token(validated_token)
-            self.scope['user'] = user
+            self.scope['user'] = await self.authenticate_user(token)
 
             data = json.loads(text_data)
 
             if data.get("type") == "ping":
-                await self.send(text_data=json.dumps({"type": "pong"}))
+                await self.send_to_client("pong")
                 print("sent pong")
                 return
 
             else:
+                if "message" not in data or "content" not in data["message"]:
+                    await self.send_to_client(ERROR_TYPE, INVALID_MESSAGE_FORMAT, "Invalid message format: expected message.content")
+                    self.close(code=INVALID_MESSAGE_FORMAT)
+                    return
+
                 message_content = data['message']['content']
                 user_id = self.scope['user'].id
                 user = await database_sync_to_async(User.objects.get)(pk=user_id)
@@ -91,61 +91,59 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     self.room_group_name,
                     {
-                        'type': 'chat_message',
+                        'type': CHAT_MESSAGE_TYPE,
                         'message': message_data,
                     }
                 )
 
         except InvalidToken as e:
             print(e)
-
-            await self.send(text_data=json.dumps({
-                "type": "ws_error",
-                "code": TOKEN_EXPIRED,
-                "message": "Invalid or expired token"
-            }))
+            await self.send_to_client(ERROR_TYPE, TOKEN_EXPIRED, "Invalid or expired token")
             await self.close(code=TOKEN_EXPIRED)
+            return
         except Exception as e:
-
             print("WebSocket receive error:", e)
-            await self.send(text_data=json.dumps({
-                "type": "ws_error",
-                "code": GENERAL_WS_ERROR,
-                "message": "General error"
-            }))
+            await self.send_to_client(ERROR_TYPE, GENERAL_WS_ERROR, "General error")
             await self.close(code=GENERAL_WS_ERROR)
 
     @database_sync_to_async
-    def validate_token(self, token):
-        jwt_auth = JWTAuthentication()
+    def validate_token(self, token, jwt_auth):
         validated_token = jwt_auth.get_validated_token(token)
         return validated_token
 
     @database_sync_to_async
-    def get_user_from_token(self, validated_token):
-        jwt_auth = JWTAuthentication()
+    def get_user_from_token(self, validated_token, jwt_auth):
         user = jwt_auth.get_user(validated_token)
         close_old_connections()
         return user
 
+    async def authenticate_user(self, token):
+        jwt_auth = JWTAuthentication()
+        validated_token = await self.validate_token(token, jwt_auth)
+        user = await self.get_user_from_token(validated_token, jwt_auth)
+        return user
+
     @database_sync_to_async
     def room_exists(self, room_id):
-
         return Room.objects.filter(id=room_id).exists()
 
     async def chat_message(self, event):
         print("Sending to WebSocket:", event['message'])
-        await self.send(text_data=json.dumps({
-            'type': 'chat_message',
-            'message': event['message'],
-        }))
+        await self.send_to_client(message=event['message'])
 
+# אפשר לוותר
     @database_sync_to_async
     def serialize_message(self, message):
-        from .serializers import MessageSerializer
         return MessageSerializer(message).data
 
+# לוודא רק שלא מוסיף משתמש קיים וזהו
     @database_sync_to_async
     def add_participant_if_needed(self, room, user):
         if room.host.id != user.id:
             room.participants.add(user)
+
+    async def send_to_client(self, type: str = CHAT_MESSAGE_TYPE, code: int = None, message: dict = None):
+        payload = {k: v for k, v in (
+            ("type", type), ("message", message), ("code", code)) if v is not None}
+        print("Sending to WebSocket:", payload)
+        await self.send(text_data=json.dumps(payload))

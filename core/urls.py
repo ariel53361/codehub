@@ -3,7 +3,7 @@ from django.urls import path
 from core import views
 
 urlpatterns = [
-    path('', TemplateView.as_view(template_name='codehub/index.html')),
+    path('', TemplateView.as_view(template_name='core/index.html')),
     path('messages/', views.MessageViewSet.as_view(
         {'get': 'list'}), name='messages'),
     path('rooms/<int:room_pk>/messages/', views.MessageViewSet.as_view(

@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import TokenVerifyView
  
 
 urlpatterns = [
+    path('', include('core.urls')),
     path('admin/', admin.site.urls),
     path('codehub/', include('core.urls')),
     path('auth/', include('djoser.urls')),
