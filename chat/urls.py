@@ -1,23 +1,14 @@
-from django.urls import path
-from rest_framework_nested import routers
-from chat import views
+from rest_framework.routers import DefaultRouter
+from rest_framework_nested.routers import NestedDefaultRouter
+from . import views
 
-router = routers.DefaultRouter()
+
+router = DefaultRouter()
 router.register('profile', views.ProfileViewSet, basename='profile')
+router.register('rooms', views.RoomViewSet, basename='rooms')
+router.register('topics', views.TopicViewSet, basename='topics')
 
-urlpatterns = [
-    path('messages/', views.MessageViewSet.as_view(
-        {'get': 'list'}), name='messages'),
-    path('rooms/<int:room_pk>/messages/', views.MessageViewSet.as_view(
-        {'get': 'list', 'post': 'create'}), name='room-messages'),
-    path('rooms/<int:room_pk>/messages/<int:pk>/', views.MessageViewSet.as_view(
-        {'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='room-message-detail'),
-    path('rooms/<int:pk>/', views.RoomViewSet.as_view(
-         {'get': 'retrieve', 'delete': 'destroy'}), name='room-detail'),
-    path('rooms/', views.RoomViewSet.as_view(
-        {'get': 'list',  'delete': 'destroy', 'post': 'create'}), name='all-rooms'),
-    path('topics/<int:pk>/', views.TopicViewSet.as_view(
-        {'get': 'retrieve', 'post': 'create', 'delete': 'destroy'}), name='topic-detail'),
-    path('topics/', views.TopicViewSet.as_view(
-        {'get': 'list'}), name='all-topics'),
-] + router.urls
+rooms_router = NestedDefaultRouter(router, 'rooms', lookup='room')
+rooms_router.register('messages', views.MessageViewSet, basename='room-messages')
+
+urlpatterns = router.urls + rooms_router.urls
