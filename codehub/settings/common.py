@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'django_filters',
     'debug_toolbar',
     'djoser',
+    'chat',
     'core',
     'channels',
 ]
@@ -135,7 +136,7 @@ DJOSER = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'AUTH_COOKIE': 'refresh_token',

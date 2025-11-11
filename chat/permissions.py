@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from core.models import Message
+from chat.models import Message
 from django.contrib.auth.models import AnonymousUser
 
 

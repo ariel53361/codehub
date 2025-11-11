@@ -1,4 +1,4 @@
-from .consumers import ChatConsumer  # Use . to indicate same directory
+from .consumers import ChatConsumer
 print("Loading core.routing.websocket_urlpatterns")
 from django.urls import re_path
 websocket_urlpatterns = [
