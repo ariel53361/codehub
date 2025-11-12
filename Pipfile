@@ -17,6 +17,8 @@ channels = "*"
 
 [dev-packages]
 django-debug-toolbar = "*"
+pytest = "*"
+pytest-django = "*"
 
 [requires]
 python_version = "3.12"

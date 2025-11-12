@@ -42,19 +42,15 @@ class TopicViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMi
 
     def get_queryset(self):
         topic_pk = self.kwargs.get('pk')
-        self.get_object
-        base_queryset = Topic.objects.annotate(room_num=Count('rooms'))
+        base_queryset = Topic.objects.annotate(
+            room_num=Count('rooms')).order_by('name')
         if topic_pk:
             return base_queryset.filter(pk=topic_pk)
         return base_queryset
 
-    # def get_permissions(self):
-    #     if self.request.method in ['POST', 'DELETE']:
-    #         return [IsAdminUser()]
-    #     return [AllowAny()]
-
 
 class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin):
+
     http_method_names = ['get', 'post', 'destroy', 'head', 'options']
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = RoomFilter
@@ -65,10 +61,11 @@ class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMix
         base_queryset = Room.objects\
             .select_related('host', 'topic')\
             .prefetch_related('participants', 'messages')\
-            .annotate(participants_num=Count('participants', distinct=True)).annotate(last_activity=Max('messages__created')).order_by('-last_activity')
+            .annotate(participants_num=Count('participants', distinct=True))\
+            .annotate(last_activity=Max('messages__created'))\
+            .order_by('-last_activity')
         if room_pk:
             return base_queryset.filter(pk=room_pk)
-
         return base_queryset
 
     def get_serializer_class(self, *args, **kwargs):
