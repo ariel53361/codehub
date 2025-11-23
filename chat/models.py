@@ -29,7 +29,7 @@ class Topic(models.Model):
 class Room(models.Model):
     host = models.ForeignKey(Profile, on_delete=models.CASCADE)
     topic = models.ForeignKey(
-        Topic, on_delete=models.SET_NULL, null=True, related_name='rooms')
+        Topic, on_delete=models.PROTECT, related_name='rooms')
     subject = models.CharField(max_length=200, validators=[
                                MinLengthValidator(2)])
     description = models.TextField(null=True, blank=True, max_length=200)

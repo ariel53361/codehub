@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import GenericViewSet
 from rest_framework import mixins
 from rest_framework.decorators import action
@@ -50,7 +51,6 @@ class TopicViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMi
 
 
 class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin):
-
     http_method_names = ['get', 'post', 'destroy', 'head', 'options']
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_class = RoomFilter
@@ -83,9 +83,9 @@ class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMix
     def get_serializer_context(self):
         topic_pk = self.kwargs.get('topic_id')
         if topic_pk:
-            return {'user_id': self.request.user.id,
+            return {'user': self.request.user,
                     'topic_id': self.kwargs['topic_id']}
-        return {'user_id': self.request.user.id}
+        return {'user': self.request.user}
 
 
 class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.UpdateModelMixin,  mixins.CreateModelMixin, mixins.DestroyModelMixin):
@@ -93,10 +93,8 @@ class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModel
     serializer_class = MessageSerializer
 
     def get_serializer_context(self):
-        room_pk = self.kwargs.get('room_pk')
-        if room_pk:
-            return {'user_id': self.request.user.id, 'room_id': self.kwargs['room_pk']}
-        return {}
+        room_pk = get_object_or_404(Room, pk=self.kwargs['room_pk']).id
+        return {'user_id': self.request.user.id, 'room_id': room_pk}
 
     def get_permissions(self):
         if self.request.method == 'GET':

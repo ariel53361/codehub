@@ -57,49 +57,40 @@ class RoomSerializer(serializers.ModelSerializer):
 
 
 class SimpleRoomSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Room
         fields = ['id', 'topic', 'subject']
 
 
 class CreateRoomSerializer(serializers.ModelSerializer):
-    topic = TopicSerializer()
-
     class Meta:
         model = Room
-        fields = ['topic', 'subject', 'description']
+        fields = ['id', 'topic', 'subject', 'description']
 
     def create(self, validated_data):
-        print('create')
-        user_id = self.context['user_id']
-        topic = Topic.objects.get(name=validated_data.get('topic')['name'])
+        user = self.context['user']
 
-        if not topic:
-            raise serializers.ValidationError(
-                {'topic': 'This topic does not existes'})
-
-        user = Profile.objects.get(pk=user_id)
+        profile = Profile.objects.get(user=user)
         return Room.objects.create(
-            host=user, topic=topic, subject=validated_data['subject'], description=validated_data['description'])
+            host=profile, **validated_data)
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    user = ProfileReadAndUpdateSerializer(read_only=True)
+    profile = ProfileReadAndUpdateSerializer(read_only=True)
     room = SimpleRoomSerializer(read_only=True)
 
     class Meta:
         model = Message
-        fields = ['id', 'user', 'content', 'room', 'updated', 'created']
+        fields = ['id', 'profile', 'content', 'room', 'updated', 'created']
 
     def save(self, **kwargs):
         user_id = self.context['user_id']
         room = Room.objects.get(pk=self.context['room_id'])
 
-        user = Profile.objects.get(pk=user_id)
+        profile = Profile.objects.get(user__id=user_id)
         self.instance = Message.objects.create(
-            user=user, room=room, **self.validated_data)
-        if room.host != user:
-            room.participants.add(user)
+            user=profile, room=room, **self.validated_data)
+        if room.host != profile:
+            room.participants.add(profile)
 
         return self.instance
