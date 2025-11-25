@@ -5,6 +5,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 
+
 def generate_test_image_file(name="new_avatar.jpg"):
     file_obj = BytesIO()
     image = Image.new("RGB", (10, 10), "white")
@@ -16,16 +17,14 @@ def generate_test_image_file(name="new_avatar.jpg"):
         content_type="image/jpeg"
     )
 
+
 @pytest.mark.django_db
 class TestUpdateProfile:
     def test_if_data_is_valid_return_200(self, api_client, authenticate):
         user = authenticate(is_staff=False)
         profile = user.profile
         image_file = generate_test_image_file()
-        data = {
-            "bio": "aaa",
-            "avatar": image_file,
-        }
+        data = {"bio": "aaa", "avatar": image_file}
 
         response = api_client.patch(
             '/codehub/profile/me/',
@@ -34,7 +33,7 @@ class TestUpdateProfile:
         )
         profile.refresh_from_db()
         expected_avatar_name = os.path.basename(profile.avatar.name)
-        
+
         assert response.status_code == status.HTTP_200_OK
         assert response.data == {
             'id': profile.id,

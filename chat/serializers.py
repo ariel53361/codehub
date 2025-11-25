@@ -3,14 +3,7 @@ from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from .models import Profile, Topic, Room, Message
 
 
-class ProfileCreateSerializer(BaseUserCreateSerializer):
-    class Meta:
-        model = Profile
-        fields = ['username', 'password', 'email',
-                  'first_name', 'last_name', 'avatar']
-
-
-class ProfileReadAndUpdateSerializer(serializers.ModelSerializer):
+class ProfileSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(read_only=True)
     avatar = serializers.ImageField(required=False, allow_null=True)
 
@@ -46,8 +39,8 @@ class TopicSerializer(serializers.ModelSerializer):
 
 class RoomSerializer(serializers.ModelSerializer):
     topic = TopicSerializer()
-    host = ProfileReadAndUpdateSerializer()
-    participants = ProfileReadAndUpdateSerializer(many=True, read_only=True)
+    host = ProfileSerializer()
+    participants = ProfileSerializer(many=True, read_only=True)
     participants_num = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -76,7 +69,7 @@ class CreateRoomSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    profile = ProfileReadAndUpdateSerializer(read_only=True)
+    profile = ProfileSerializer(read_only=True)
     room = SimpleRoomSerializer(read_only=True)
 
     class Meta:

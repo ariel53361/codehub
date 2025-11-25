@@ -10,13 +10,13 @@ from chat.filters import RoomFilter
 from chat.permissions import IsMessageWriter, IsCurrentUser
 from django.db.models.aggregates import Count, Max
 from .models import Profile, Topic, Message, Room
-from .serializers import CreateRoomSerializer, ProfileReadAndUpdateSerializer, TopicSerializer, MessageSerializer, RoomSerializer
+from .serializers import CreateRoomSerializer, ProfileSerializer, TopicSerializer, MessageSerializer, RoomSerializer
 
 
 class ProfileViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
     queryset = Profile.objects.all()
     http_method_names = ['get', 'patch', 'head', 'options']
-    serializer_class = ProfileReadAndUpdateSerializer
+    serializer_class = ProfileSerializer
 
     def get_permissions(self):
         if self.request.method in ['PATCH']:
@@ -27,10 +27,10 @@ class ProfileViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateMod
     def me(self, request):
         (proflie, created) = Profile.objects.get_or_create(user_id=request.user.id)
         if request.method == 'GET':
-            serializer = ProfileReadAndUpdateSerializer(proflie)
+            serializer = ProfileSerializer(proflie)
             return Response(serializer.data)
         elif request.method == 'PATCH':
-            serializer = ProfileReadAndUpdateSerializer(
+            serializer = ProfileSerializer(
                 proflie, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
