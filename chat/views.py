@@ -19,6 +19,8 @@ class ProfileViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateMod
     serializer_class = ProfileSerializer
 
     def get_permissions(self):
+        if self.action == 'me':
+            return [IsAuthenticated()]
         if self.request.method in ['PATCH']:
             return [IsCurrentUser()]
         return [AllowAny()]
