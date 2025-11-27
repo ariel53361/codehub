@@ -45,12 +45,11 @@ class TestUpdateProfile:
         expected_avatar_name = os.path.basename(profile.avatar.name)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data == {
-            'id': profile.id,
-            'user_id': user.id,
-            'avatar': expected_avatar_name,
-            'bio': bio
-        }
+        assert profile.user_id == user.id and \
+            response.data['id'] == profile.id and \
+            response.data['bio'] == bio and \
+            response.data['avatar'] == expected_avatar_name and \
+            response.data['user']['id'] == user.id
 
     def test_if_data_is_invalid_return_400(self, authenticate, update_profile):
         authenticate(is_staff=False)
@@ -74,7 +73,7 @@ class TestRetriveProfile:
         response = get_profile()
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data['user_id'] == user.id
+        assert response.data['user']['id'] == user.id
 
     def test_if_user_is_annonymous_return_401(self, get_profile):
         response = get_profile()

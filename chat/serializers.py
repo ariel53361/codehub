@@ -1,10 +1,20 @@
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from .models import Profile, Topic, Room, Message
 
 
+User = get_user_model()
+
+
+class UserNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+
+
 class ProfileSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(read_only=True)
+    user = UserNestedSerializer(read_only=True)
     avatar = serializers.ImageField(required=False, allow_null=True)
 
     def to_representation(self, instance):
@@ -15,7 +25,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['id', 'user_id', 'avatar', 'bio']
+        fields = ['id', 'user', 'avatar', 'bio']
 
     # def update(self, instance, validated_data):
     #     password = validated_data.pop('password', None)
