@@ -82,7 +82,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
         profile = Profile.objects.get(user__id=user_id)
         self.instance = Message.objects.create(
-            user=profile, room=room, **self.validated_data)
+            profile=profile, room=room, **self.validated_data)
         if room.host != profile:
             room.participants.add(profile)
 

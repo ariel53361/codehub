@@ -111,8 +111,8 @@ class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModel
     def get_queryset(self):
         room_pk = self.kwargs.get('room_pk')
         if room_pk:
-            return Message.objects.filter(room_id=room_pk).select_related('user').order_by('-created')
-        return Message.objects.all().select_related('user', 'room').order_by('-created')
+            return Message.objects.filter(room_id=room_pk).select_related('profile').order_by('-created')
+        return Message.objects.all().select_related('profile', 'room').order_by('-created')
 
 
 # # This class extends Djoser's TokenCreateView to customize how tokens are created and returned

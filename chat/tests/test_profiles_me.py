@@ -9,14 +9,14 @@ from rest_framework import status
 @pytest.fixture
 def update_profile(api_client):
     def do_update_profile(**attributes):
-        return api_client.patch('/codehub/profile/me/', data=attributes)
+        return api_client.patch('/codehub/profiles/me/', data=attributes)
     return do_update_profile
 
 
 @pytest.fixture
 def get_profile(api_client):
     def do_get_profile():
-        return api_client.get('/codehub/profile/me/')
+        return api_client.get('/codehub/profiles/me/')
     return do_get_profile
 
 

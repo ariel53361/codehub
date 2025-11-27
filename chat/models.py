@@ -43,7 +43,7 @@ class Room(models.Model):
 
 
 class Message(models.Model):
-    user = models.ForeignKey(Profile,
+    profile = models.ForeignKey(Profile,
                              on_delete=models.DO_NOTHING)
     room = models.ForeignKey(
         Room, on_delete=models.CASCADE, related_name='messages')
