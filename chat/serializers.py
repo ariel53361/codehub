@@ -68,13 +68,17 @@ class SimpleRoomSerializer(serializers.ModelSerializer):
 
 
 class CreateRoomSerializer(serializers.ModelSerializer):
+    topic = serializers.PrimaryKeyRelatedField(
+        queryset=Topic.objects.all(),
+        write_only=True
+    )
+
     class Meta:
         model = Room
         fields = ['id', 'topic', 'subject', 'description']
 
     def create(self, validated_data):
         user = self.context['user']
-
         profile = Profile.objects.get(user=user)
         return Room.objects.create(
             host=profile, **validated_data)

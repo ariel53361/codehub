@@ -54,7 +54,6 @@ class TestCreateRoom:
         response = api_client.post(f'/codehub/rooms/', room)
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert response.data['topic'] == room['topic']
         assert response.data['subject'] == room['subject']
 
     def test_if_data_is_invalid_return_400(self, api_client, authenticate):
