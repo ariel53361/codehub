@@ -19,8 +19,10 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
+
         if instance.avatar:
-            ret['avatar'] = instance.avatar.name.split('/')[-1]
+            ret['avatar'] = instance.avatar.url
+
         return ret
 
     class Meta:
