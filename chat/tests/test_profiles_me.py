@@ -1,9 +1,12 @@
 from io import BytesIO
 import os
 from PIL import Image
+from django.conf import settings
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
+
+from codehub.settings.common import MEDIA_URL
 
 
 @pytest.fixture
@@ -42,13 +45,12 @@ class TestUpdateProfile:
 
         response = update_profile(bio=bio, avatar=image_file)
         profile.refresh_from_db()
-        expected_avatar_name = os.path.basename(profile.avatar.name)
 
         assert response.status_code == status.HTTP_200_OK
         assert profile.user_id == user.id and \
             response.data['id'] == profile.id and \
             response.data['bio'] == bio and \
-            response.data['avatar'] == expected_avatar_name and \
+            response.data['avatar'] == profile.avatar.url and \
             response.data['user']['id'] == user.id
 
     def test_if_data_is_invalid_return_400(self, authenticate, update_profile):
