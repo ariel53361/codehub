@@ -10,10 +10,8 @@ class TestRoomsList:
     def test_if_user_is_anonymous_return_200(self, api_client):
         quantity = 5
         users = baker.make(settings.AUTH_USER_MODEL, _quantity=quantity)
-
         for user in users:
             baker.make(Room, host=user.profile)
-
         response = api_client.get('/codehub/rooms/')
         results = response.data.get('results', response.data)
 

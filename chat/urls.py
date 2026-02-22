@@ -1,3 +1,4 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 from . import views
@@ -9,6 +10,9 @@ router.register('rooms', views.RoomViewSet, basename='rooms')
 router.register('topics', views.TopicViewSet, basename='topics')
 
 rooms_router = NestedDefaultRouter(router, 'rooms', lookup='room')
-rooms_router.register('messages', views.MessageViewSet, basename='room-messages')
+rooms_router.register('messages', views.MessageViewSet,
+                      basename='room-messages')
 
-urlpatterns = router.urls + rooms_router.urls
+urlpatterns = router.urls\
+    + rooms_router.urls \
+    + [path("test-email/", views.test_email_view, name="test-email")]

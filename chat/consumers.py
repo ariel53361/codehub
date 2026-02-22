@@ -3,12 +3,14 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from urllib.parse import parse_qs
 import json
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from django.contrib.auth import get_user_model
 from django.db import close_old_connections
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken
-from .models import User, Message, Room
+from .models import Message, Room, Profile
 from .serializers import MessageSerializer
 
+User = get_user_model()
 
 GENERAL_WS_ERROR = 4000
 TOKEN_EXPIRED = 4001
@@ -17,6 +19,7 @@ INVALID_MESSAGE_FORMAT = 4003
 
 ERROR_TYPE = "ws_error"
 CHAT_MESSAGE_TYPE = "chat_message"
+ACK_TYPE = "ack"
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -32,17 +35,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user = await self.authenticate_user(token)
             self.scope['access_token'] = token
             self.scope['user'] = user
+            print("set user in scope...")
         except InvalidToken as e:
             print("InvalidToken")
+            print("failed set user in scope...")
             await self.close()
             return
         except Exception as e:
+            print("failed set user in scope...")
             await self.close()
             return
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         room_exists = await self.room_exists(self.room_id)
         if not room_exists:
             await self.close()
+            # אולי להחזיר קוד שגיאה מתאים
             return
 
         self.room_group_name = f'chat_{self.room_id}'
@@ -58,7 +65,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             if not token:
                 await self.send_to_client(ERROR_TYPE, TOKEN_MISSING, "Token is missing")
-                await self.close(code=TOKEN_EXPIRED)
+                await self.close(code=TOKEN_MISSING)
 
             self.scope['user'] = await self.authenticate_user(token)
 
@@ -70,31 +77,48 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 return
 
             else:
-                if "message" not in data or "content" not in data["message"]:
-                    await self.send_to_client(ERROR_TYPE, INVALID_MESSAGE_FORMAT, "Invalid message format: expected message.content")
-                    self.close(code=INVALID_MESSAGE_FORMAT)
+                if (data.get("type") != CHAT_MESSAGE_TYPE
+                        or "message" not in data
+                        or "content" not in data["message"]
+                        or "client_id" not in data["message"]
+                        ):
+                    await self.send_to_client(
+                        ERROR_TYPE,
+                        INVALID_MESSAGE_FORMAT,
+                        "Invalid format: expected type=chat_message and message.content + message.client_id")
+                    await self.close(code=INVALID_MESSAGE_FORMAT)
                     return
 
                 message_content = data['message']['content']
+                client_id = str(data["message"]["client_id"])
+
                 user_id = self.scope['user'].id
-                user = await database_sync_to_async(User.objects.get)(pk=user_id)
+                profile = await database_sync_to_async(Profile.objects.get)(user_id=user_id)
                 room = await database_sync_to_async(Room.objects.get)(pk=self.room_id)
 
-                message = await database_sync_to_async(Message.objects.create)(
-                    user=user, room=room, content=message_content
+                message, created = await database_sync_to_async(Message.objects.get_or_create)(
+                    profile=profile,
+                    room=room,
+                    client_id=client_id,
+                    defaults={"content": message_content},
                 )
 
-                await self.add_participant_if_needed(room, user)
+                await self.add_participant_if_needed(room, profile)
 
-                message_data = await self.serialize_message(message)
-
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        'type': CHAT_MESSAGE_TYPE,
-                        'message': message_data,
-                    }
+                await self.send_to_client(
+                    type=ACK_TYPE,
+                    message={
+                        "client_id": client_id,
+                        "server_id": message.id,
+                    },
                 )
+
+                if created:
+                    message_data = await self.serialize_message(message)
+                    await self.channel_layer.group_send(
+                        self.room_group_name,
+                        {"type": CHAT_MESSAGE_TYPE, "message": message_data},
+                    )
 
         except InvalidToken as e:
             print(e)
@@ -128,7 +152,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return Room.objects.filter(id=room_id).exists()
 
     async def chat_message(self, event):
-        print("Sending to WebSocket:", event['message'])
         await self.send_to_client(message=event['message'])
 
 # אפשר לוותר
@@ -138,12 +161,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
 # לוודא רק שלא מוסיף משתמש קיים וזהו
     @database_sync_to_async
-    def add_participant_if_needed(self, room, user):
-        if room.host.id != user.id:
-            room.participants.add(user)
+    def add_participant_if_needed(self, room, profile):
+        if room.host.id != profile.id:
+            room.participants.add(profile)
 
     async def send_to_client(self, type: str = CHAT_MESSAGE_TYPE, code: int = None, message: dict = None):
         payload = {k: v for k, v in (
             ("type", type), ("message", message), ("code", code)) if v is not None}
-        print("Sending to WebSocket:", payload)
         await self.send(text_data=json.dumps(payload))

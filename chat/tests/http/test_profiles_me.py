@@ -1,26 +1,22 @@
 from io import BytesIO
-import os
 from PIL import Image
-from django.conf import settings
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 
-from codehub.settings.common import MEDIA_URL
-
 
 @pytest.fixture
 def update_profile(api_client):
-    def do_update_profile(**attributes):
+    def _update_profile(**attributes):
         return api_client.patch('/codehub/profiles/me/', data=attributes)
-    return do_update_profile
+    return _update_profile
 
 
 @pytest.fixture
 def get_profile(api_client):
-    def do_get_profile():
+    def _get_profile():
         return api_client.get('/codehub/profiles/me/')
-    return do_get_profile
+    return _get_profile
 
 
 def generate_test_image_file(name="new_avatar.jpg"):
@@ -50,7 +46,7 @@ class TestUpdateProfile:
         assert profile.user_id == user.id and \
             response.data['id'] == profile.id and \
             response.data['bio'] == bio and \
-            response.data['avatar'] == profile.avatar.url and \
+            response.data['avatar'] == profile.avatar.url[1:] and \
             response.data['user']['id'] == user.id
 
     def test_if_data_is_invalid_return_400(self, authenticate, update_profile):

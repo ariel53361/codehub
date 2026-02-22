@@ -1,3 +1,4 @@
+import uuid
 from django.core.validators import MinLengthValidator, MaxLengthValidator
 from django.db import models
 from codehub.settings import common
@@ -43,8 +44,25 @@ class Room(models.Model):
 
 
 class Message(models.Model):
-    profile = models.ForeignKey(Profile,
-                             on_delete=models.DO_NOTHING)
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["room", "profile", "client_id"],
+                name="uniq_message_client_id_per_sender_room",
+            )
+        ]
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    client_id = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        db_index=True
+    )
     room = models.ForeignKey(
         Room, on_delete=models.CASCADE, related_name='messages')
     content = models.TextField(validators=[
@@ -55,4 +73,4 @@ class Message(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f'{self.user.get_full_name()}-{self.room.subject}'
+        return f'{self.profile}-{self.room.subject}'

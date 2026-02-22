@@ -1,16 +1,31 @@
 from django.shortcuts import get_object_or_404
+from django.conf import settings
 from rest_framework.viewsets import GenericViewSet
 from rest_framework import mixins
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django.core.mail import send_mail
 from chat.filters import RoomFilter
 from chat.permissions import IsMessageWriter, IsCurrentUser
 from django.db.models.aggregates import Count, Max
 from .models import Profile, Topic, Message, Room
 from .serializers import CreateRoomSerializer, ProfileSerializer, TopicSerializer, MessageSerializer, RoomSerializer
+from django.contrib.auth import get_user_model
+
+
+@api_view(["GET"])
+def test_email_view(request):
+    # send_mail("subject", "message", "ariel53361@gmail.com",
+    #           ["ariel53361@gmail.com"])
+    User = get_user_model()
+    User.objects.filter(id__gte=38).delete()
+
+    return Response({
+        "success":  1,
+    })
 
 
 class ProfileViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.UpdateModelMixin):
@@ -90,8 +105,8 @@ class RoomViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMix
         return {'user': self.request.user}
 
 
-class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin, mixins.UpdateModelMixin,  mixins.CreateModelMixin, mixins.DestroyModelMixin):
-    http_method_names = ['get', 'post', 'put', 'delete', 'head', 'options']
+class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModelMixin):
+    http_method_names = ['get', 'head', 'options']
     serializer_class = MessageSerializer
 
     def get_serializer_context(self):
@@ -101,11 +116,6 @@ class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModel
     def get_permissions(self):
         if self.request.method == 'GET':
             return [AllowAny()]
-        # for some reason the IsMessageWriter permission is not working with the PATCH method
-        elif self.request.method == 'PUT':
-            return [IsMessageWriter()]
-        elif self.request.method == 'POST':
-            return [IsAuthenticated()]
         return [IsAdminUser()]
 
     def get_queryset(self):
@@ -113,38 +123,3 @@ class MessageViewSet(GenericViewSet, mixins.RetrieveModelMixin, mixins.ListModel
         if room_pk:
             return Message.objects.filter(room_id=room_pk).select_related('profile').order_by('-created')
         return Message.objects.all().select_related('profile', 'room').order_by('-created')
-
-
-# # This class extends Djoser's TokenCreateView to customize how tokens are created and returned
-# class CustomTokenCreateView(TokenCreateView):
-#     # This method is called after user credentials are validated
-#     # It receives the serializer containing the authenticated user
-#     def _action(self, serializer):
-#         # Create both refresh and access tokens for the authenticated user
-#         # token is the refresh token object, which also contains the access token
-#         token = RefreshToken.for_user(serializer.user)
-
-#         # Create the response object
-#         # Only include access token in JSON body - frontend will store this
-#         # The refresh token will be sent as a cookie instead
-#         response = Response(
-#             {
-#                 'access': str(token.access_token),
-#             },
-#             status=status.HTTP_200_OK,
-#         )
-
-#         # Set the refresh token as a cookie
-#         response.set_cookie(
-#             key='refresh_token',      # Name of the cookie
-#             value=str(token),         # The refresh token value
-#             expires=None,             # Cookie expires when browser closes
-#             secure=False,              # Cookie only sent over HTTPS
-#             httponly=True,            # Cookie cannot be accessed by JavaScript
-#             samesite='Lax'           # Protects against CSRF attacks
-#         )
-
-#         # Return the response with both:
-#         # - access token in response body (for frontend to store)
-#         # - refresh token in cookie (automatically handled by browser)
-#         return response

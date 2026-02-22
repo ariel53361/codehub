@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from datetime import timedelta
 from pathlib import Path
 import os
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -29,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'daphne',
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
@@ -79,7 +81,7 @@ ROOT_URLCONF = 'codehub.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,13 +127,29 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+
+    "DEFAULT_THROTTLE_RATES": {
+        "resend_activation": "1/min",
+        "reset_password": "5/hour",
+    },
 }
 
+AUTH_PASSWORD_VALIDATORS = []
 DJOSER = {
     'SERIALIZERS': {
         'current_user': 'core.serializers.UserReadAndUpdateSerializer',
         'user_create': 'core.serializers.UserCreateSerializer'
     },
+    "VIEWSET_MAP": {
+        "user": "core.views.CustomUserViewSet",
+    },
+    "SET_PASSWORD_RETYPE": True,
+    "SEND_ACTIVATION_EMAIL": True,
+    "ACTIVATION_URL": "activate/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "reset-password/{uid}/{token}",
+    "EMAIL_FRONTEND_PROTOCOL": "http",
+    "EMAIL_FRONTEND_DOMAIN": "localhost:5173",
+    "EMAIL_FRONTEND_SITE_NAME": "CodeHub"
 }
 
 SIMPLE_JWT = {
@@ -169,3 +187,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 AUTH_USER_MODEL = 'core.User'
+
+
+EMAIL_HOST = "smtp-relay.brevo.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = config("BREVO_SMTP_LOGIN")
+EMAIL_HOST_PASSWORD = config("BREVO_SMTP_KEY")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL")
+
+
+FRONTEND_URL = config("FRONTEND_URL")

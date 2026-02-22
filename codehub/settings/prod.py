@@ -1,12 +1,13 @@
 import os
 from urllib.parse import urlparse
 from .common import *
+from decouple import config
 
 DEBUG = False
 
-SECRET_KEY = os.environ['SECRET_KEY']
+SECRET_KEY = config('SECRET_KEY')
 
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = config('DATABASE_URL')
 url = urlparse(DATABASE_URL)
 
 DATABASES = {

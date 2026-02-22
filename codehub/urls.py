@@ -5,12 +5,18 @@ from django.urls import path, include
 from chat.jwt_auth.auth_views import CookieTokenObtainView, CookieTokenRefreshView
 from rest_framework_simplejwt.views import TokenVerifyView
 
- 
+from core.views import CustomUserViewSet
+
 
 urlpatterns = [
     path('', include('core.urls')),
     path('admin/', admin.site.urls),
     path('codehub/', include('chat.urls')),
+    path(
+        'auth/users/resend_activation/',
+        CustomUserViewSet.as_view({'post': 'resend_activation'}),
+        name='user-resend-activation',
+    ),
     path('auth/', include('djoser.urls')),
     path('auth/jwt/create/', CookieTokenObtainView.as_view(), name='jwt-create'),
     path('auth/jwt/refresh/', CookieTokenRefreshView.as_view(), name='jwt-refresh'),
@@ -19,5 +25,7 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL,
+                          document_root=settings.STATIC_ROOT)

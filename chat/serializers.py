@@ -21,7 +21,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
 
         if instance.avatar:
-            ret['avatar'] = instance.avatar.url
+            ret['avatar'] = instance.avatar.url[1:]
 
         return ret
 
@@ -90,16 +90,17 @@ class MessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Message
-        fields = ['id', 'profile', 'content', 'room', 'updated', 'created']
+        fields = ['id', 'client_id', 'profile',
+                  'content', 'room', 'updated', 'created']
 
-    def save(self, **kwargs):
-        user_id = self.context['user_id']
-        room = Room.objects.get(pk=self.context['room_id'])
+    # def save(self, **kwargs):
+    #     user_id = self.context['user_id']
+    #     room = Room.objects.get(pk=self.context['room_id'])
 
-        profile = Profile.objects.get(user__id=user_id)
-        self.instance = Message.objects.create(
-            profile=profile, room=room, **self.validated_data)
-        if room.host != profile:
-            room.participants.add(profile)
+    #     profile = Profile.objects.get(user__id=user_id)
+    #     self.instance = Message.objects.create(
+    #         profile=profile, room=room, **self.validated_data)
+    #     if room.host != profile:
+    #         room.participants.add(profile)
 
-        return self.instance
+    #     return self.instance
